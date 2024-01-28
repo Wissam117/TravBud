@@ -1,68 +1,75 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-import time
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
-def search_for_destination(driver, destination_for_search):
-    search_field = driver.find_element_by_id('ss')
+# Input placeholders
+max_budget = "your_max_budget"
+search_destination = "your_destination"
+no_of_adults = "number_of_adults"
+no_of_children = "number_of_children"
+children_ages = ["age1", "age2"]  # Add more as per requirement
+start_date = "YYYY-MM-DD"  # Format: YYYY-MM-DD
+end_date = "YYYY-MM-DD"  # Format: YYYY-MM-DD
 
-    search_field.send_keys(destination_for_search)
+# Setting up the Chrome WebDriver
+driver = webdriver.Chrome('chromedriver.exe')
 
-    driver.find_element_by_class_name('sb-searchbox__button').click()
-      #finding search button and clicking it
-    wait = WebDriverWait(driver, timeout=10).until(
-        EC.presence_of_all_elements_located(
-            (By.CLASS_NAME, 'sr-hotel__title')))
+# Navigating to Booking.com
+driver.get("https://www.booking.com")
 
-def scrape_results(driver, topn_results):
-    accommodations_urls = list()
-    top_results = list()
+# Wait for the destination field to be available and enter the search destination
+destination_input = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.ID, "ss"))
+)
+destination_input.send_keys(search_destination)
 
-    for accomodation_title in driver.find_elements_by_class_name('sr-hotel__title'):
-        accommodations_urls.append(accomodation_title.find_element_by_class_name('hotel_name_link').get_attribute('href'))
+# Selecting the start and end date
+date_field = driver.find_element(By.CLASS_NAME, "xp__dates")
+date_field.click()
+# Use the `data-date` attribute to find the correct date elements and click them
+start_date_element = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, f"td[data-date='{start_date}']"))
+)
+start_date_element.click()
+end_date_element = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.CSS_SELECTOR, f"td[data-date='{end_date}']"))
+)
+end_date_element.click()
 
-    for url in range(0, topn_results):
-        if url == topn_results:
-            break
-        url_data = scrape_accommodation_data(driver, accommodations_urls[url])
-        top_results.append(url_data)
-    
-    return top_results
+# Adjusting the number of adults and children
+guest_field = driver.find_element(By.CLASS_NAME, "xp__guests")
+guest_field.click()
 
-def scrape_accommodation_data(driver, accommodation_url):
-    driver.get(accommodation_url)
-    time.sleep(12)
+# Code to set the correct number of adults
+adults_minus_button = driver.find_element(By.CSS_SELECTOR, "button[aria-label='Decrease number of Adults']")
+adults_plus_button = driver.find_element(By.CSS_SELECTOR, "button[aria-label='Increase number of Adults']")
+# Adjust adults
+for _ in range(int(no_of_adults) - 1):  # Assumes default is 1 adult
+    adults_plus_button.click()
 
-    accommodation_fields = dict()
+# Code to set the correct number of children and their ages
+children_plus_button = driver.find_element(By.CSS_SELECTOR, "button[aria-label='Increase number of Children']")
+for _ in range(int(no_of_children)):
+    children_plus_button.click()
+    # Assuming children age fields appear sequentially after clicking the plus button
+    # Replace '0' with the index of the first child age dropdown that appears
+    child_age_dropdown = WebDriverWait(driver, 10).until(
+        EC.presence_of_all_elements_located((By.CLASS_NAME, "sb-group__field.sb-group-children__field.sb-group__field--select"))
+    )
+    for index, age in enumerate(children_ages):
+        child_age_dropdown[index].find_element(By.TAG_NAME, "select").send_keys(age)
 
-    # Get the accommodation name
-    accommodation_fields['name'] = driver.find_element_by_id('hp_hotel_name').text.strip('Hotel')
+# Submitting the search
+search_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+search_button.click()
 
-    # Get the accommodation score
-    accommodation_fields['score'] = driver.find_element_by_class_name('bui-review-score--end').find_element_by_class_name('bui-review-score__badge').text
-    
-    # Get the accommodation location
-    accommodation_fields['location'] = driver.find_element_by_id('showMap2').find_element_by_class_name('hp_address_subtitle').text
+# Wait for the page to load and display the top result
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "sr_property_block")))
+top_result = driver.find_element(By.CLASS_NAME, "sr_property_block")
+print(top_result.text)
 
-    # Get the most popular facilities
-    accommodation_fields['popular_facilities'] = list()
-    facilities = driver.find_element_by_class_name('hp_desc_important_facilities')
-
-    for facility in facilities.find_elements_by_class_name('important_facility'):
-        accommodation_fields['popular_facilities'].append(facility.text)
-    
-    return accommodation_fields
-
-if __name__ == '__main__':
-
-        service = Service(executable_path="chromedriver.exe")
-        driver = webdriver.Chrome(service=service)
-        driver.get("https://www.booking.com/")
-
-        search_for_destination(driver, 'Islamabad')
-        top_results = scrape_results(driver, 1)
-        print(top_results)        
-   
-        driver.quit()
+# Clean up by closing the browser
+driver.quit()
