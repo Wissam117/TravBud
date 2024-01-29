@@ -1,4 +1,6 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,23 +8,33 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 
 # Input placeholders
-max_budget = "your_max_budget"
-search_destination = "your_destination"
-no_of_adults = "number_of_adults"
-no_of_children = "number_of_children"
-children_ages = ["age1", "age2"]  # Add more as per requirement
-start_date = "YYYY-MM-DD"  # Format: YYYY-MM-DD
-end_date = "YYYY-MM-DD"  # Format: YYYY-MM-DD
+max_budget = "10000"
+search_destination = "Islamabad"
+no_of_adults = "2"
+no_of_children = "1"
+children_ages = ["10"]  # Add more as per requirement
+start_date = "2024-02-15"  # Format: YYYY-MM-DD
+end_date = "2024-02-16"  # Format: YYYY-MM-DD
 
 # Setting up the Chrome WebDriver
-driver = webdriver.Chrome('chromedriver.exe')
+service = Service(executable_path="chromedriver.exe")
+driver = webdriver.Chrome(service=service)
 
 # Navigating to Booking.com
 driver.get("https://www.booking.com")
 
+time.sleep(12)  # Adjust sleep time as necessary
+
+# Determine window size
+window_width = driver.get_window_size()["width"]
+window_height = driver.get_window_size()["height"]
+'''
+
+'''
+
 # Wait for the destination field to be available and enter the search destination
-destination_input = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.ID, "ss"))
+destination_input = WebDriverWait(driver, 50).until(
+    EC.presence_of_element_located((By.ID, "b2indexPage")) #ss
 )
 destination_input.send_keys(search_destination)
 
@@ -50,19 +62,18 @@ adults_plus_button = driver.find_element(By.CSS_SELECTOR, "button[aria-label='In
 for _ in range(int(no_of_adults) - 1):  # Assumes default is 1 adult
     adults_plus_button.click()
 
-# Code to set the correct number of children and their ages
+
 children_plus_button = driver.find_element(By.CSS_SELECTOR, "button[aria-label='Increase number of Children']")
 for _ in range(int(no_of_children)):
     children_plus_button.click()
-    # Assuming children age fields appear sequentially after clicking the plus button
-    # Replace '0' with the index of the first child age dropdown that appears
+   
     child_age_dropdown = WebDriverWait(driver, 10).until(
         EC.presence_of_all_elements_located((By.CLASS_NAME, "sb-group__field.sb-group-children__field.sb-group__field--select"))
     )
     for index, age in enumerate(children_ages):
         child_age_dropdown[index].find_element(By.TAG_NAME, "select").send_keys(age)
 
-# Submitting the search
+
 search_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
 search_button.click()
 
