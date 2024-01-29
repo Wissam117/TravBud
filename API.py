@@ -17,6 +17,8 @@ no_of_rooms = "5"
 children_ages = ["10", "1", "2", "4", "5"]  # Add more as per requirement
 start_date = "2024-02-29"  # Format: YYYY-MM-DD
 end_date = "2024-03-03"  # Format: YYYY-MM-DD
+max_per_day_accomodation_budget="10000"
+minimum_review_points="8"
 
 # Setting up the Chrome WebDriver
 service = Service(executable_path="chromedriver.exe")
@@ -28,17 +30,18 @@ if int(no_of_children)>0 :
     for i in range(int(no_of_children)):
         url += f"&age={children_ages[i]}"
 #extra filters
-url+="&nflt=price%3DPKR-min-15000-1%3Breview_score%3D70" #good reviews and budget constraint
+url+=f"&nflt=price%3DPKR-min-{max_per_day_accomodation_budget}-1%3Breview_score%3D{minimum_review_points}0" #good reviews and budget constraint
 
 # Navigating to Booking.com
 driver.get(url)
 
 time.sleep(5)  # Adjust sleep time as necessary
-
+top_pick={}
 
 prices = driver.find_elements(By.CLASS_NAME, "f6431b446c")
 for price in prices:
     print(price.text)
+    
 
 time.sleep(200)
 driver.quit()
