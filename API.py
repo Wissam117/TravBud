@@ -43,22 +43,40 @@ header = result.pop(0)
 
 list_price = []
 list_names = []
+hotel_names=[]
+hotel_prices=[]
+list_hotels = []
 
 class Hotel:
     def __init__(self, name, price):
         self.name = name
         self.price = price
 
-print(f"HEADER: {header.text}")
 
-list_hotels = []
-for idx in range(0, len(result), 2):
-    hotel = Hotel(result[idx].text, int(result[idx + 1].text.replace(",", "").replace("PKR", "")))
-    list_hotels.append(hotel)
+no_of_properties=int(header.text.replace("properties found","").replace(search_destination,"").replace(": ","").replace(" ",""))
+print(f"No of propersties found: {no_of_properties}")
 
-for hotel in list_hotels:
-    print(f"{hotel.name} - {hotel.price}")
+if no_of_properties>0:
+    for idx in range(0, len(result) and 10, 2): 
+        hotel = Hotel(result[idx].text, int(result[idx + 1].text.replace(",", "").replace("PKR", "").replace(" ","")))
+        list_hotels.append(hotel)
+        
+    for hotel in list_hotels:
+        hotel_names.append(hotel.name)
+        hotel_prices.append(hotel.price)
+    for hoteel1 in hotel_names :
+        top_pick=hoteel1
+        break
+    for hoteel2 in hotel_prices:
+        top_pick_price=hoteel2
+        break
+
+    print(f"Our top pick is {top_pick} with a total cost of {top_pick_price}")
+else:
+    print("No results")
+   
+
 
     
-time.sleep(200)
+time.sleep(20)
 driver.quit()
