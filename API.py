@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import PIL.Image as pl
 from datetime import datetime
 
 # Input placeholders
@@ -35,7 +36,7 @@ url+=f"&nflt=price%3DPKR-min-{max_per_day_accomodation_budget}-1%3Breview_score%
 # Navigating to Booking.com
 driver.get(url)
 
-time.sleep(5)  # Adjust sleep time as necessary
+time.sleep(12)  # Adjust sleep time as necessary
 top_pick={}
 
 result = driver.find_elements(By.CLASS_NAME, "f6431b446c")
@@ -43,8 +44,8 @@ header = result.pop(0)
 #list initialization
 list_price = []
 list_names = []
-hotel_names=[]
-hotel_prices=[]
+hotel_names = []
+hotel_prices = []
 list_hotels = []
 
 
@@ -52,15 +53,19 @@ class Hotel:
     def __init__(self, name, price):
         self.name = name
         self.price = price
-
+hheader = ''.join(c for c in header.text if c.isdigit() )
 #checking if our parameters are possible
-no_of_properties=int(header.text.replace("properties found","").replace(search_destination,"").replace(": ","").replace(" ",""))
-print(f"No of propersties found: {no_of_properties}")
+print(rf"{hheader}")
+no_of_properties=int(hheader)
+print(f"No of properties found: {no_of_properties}")
 
 if no_of_properties>0:
-    
+
     for idx in range(0, len(result) and 10, 2): 
-        hotel = Hotel(result[idx].text, int(result[idx + 1].text.replace(",", "").replace("PKR", "").replace(" ","")))
+        hname= result[idx].text
+        hpricie = ''.join(c for c in result[idx + 1].text if c.isdigit() )
+        print(f"name {hname} and price {hpricie}")
+        hotel = Hotel(hname, int(hpricie))
         list_hotels.append(hotel)
         
     for hotel in list_hotels:
@@ -80,5 +85,5 @@ else:
 
 
     
-time.sleep(10)
+time.sleep(100)
 driver.quit()
