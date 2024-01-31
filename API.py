@@ -36,12 +36,15 @@ url+=f"&nflt=price%3DPKR-min-{max_per_day_accomodation_budget}-1%3Breview_score%
 # Navigating to Booking.com
 driver.get(url)
 
-time.sleep(12)  # Adjust sleep time as necessary
-top_pick={}
+WebDriverWait(driver,20).until(EC.presence_of_element_located((By.TAG_NAME,'body')))  # Adjust sleep time as necessary
+WebDriverWait(driver,20).until(EC.presence_of_element_located((By.CLASS_NAME,'f6431b446c')))
+
 
 result = driver.find_elements(By.CLASS_NAME, "f6431b446c")
 header = result.pop(0)
+
 #list initialization
+top_pick={}
 list_price = []
 list_names = []
 hotel_names = []
@@ -53,18 +56,16 @@ class Hotel:
     def __init__(self, name, price):
         self.name = name
         self.price = price
-hheader = ''.join(c for c in header.text if c.isdigit() )
-#checking if our parameters are possible
-print(rf"{hheader}")
-no_of_properties=int(hheader)
-print(f"No of properties found: {no_of_properties}")
 
+hheader = ''.join(c for c in header.text if c.isdigit() )
+
+#checking if our parameters are possible
+no_of_properties=int(hheader)
 if no_of_properties>0:
 
     for idx in range(0, len(result) and 10, 2): 
         hname= result[idx].text
         hpricie = ''.join(c for c in result[idx + 1].text if c.isdigit() )
-        print(f"name {hname} and price {hpricie}")
         hotel = Hotel(hname, int(hpricie))
         list_hotels.append(hotel)
         
@@ -77,10 +78,12 @@ if no_of_properties>0:
     for hoteel2 in hotel_prices:
         top_pick_price=hoteel2
         break
+
 #top pick
-    print(f"Our top pick is {top_pick} with a total cost of {top_pick_price}")
+   # print(f"Our top pick is {top_pick} with a total cost of {top_pick_price}")
 else:
-    print("No results")
+    #print("No results")
+    exit
    
 
 
