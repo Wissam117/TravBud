@@ -6,10 +6,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import PIL.Image as pl
+from PIL import Image
+from io import BytesIO
 from datetime import datetime
 
 # Input placeholders
+
 max_budget = "10000"
 search_destination = "Islamabad"
 no_of_adults = "1"
@@ -36,11 +38,16 @@ url+=f"&nflt=price%3DPKR-min-{max_per_day_accomodation_budget}-1%3Breview_score%
 # Navigating to Booking.com
 driver.get(url)
 
-WebDriverWait(driver,20).until(EC.presence_of_element_located((By.TAG_NAME,'body')))  # Adjust sleep time as necessary
-WebDriverWait(driver,20).until(EC.presence_of_element_located((By.CLASS_NAME,'f6431b446c')))
-
+time.sleep(10)
+ 
 
 result = driver.find_elements(By.CLASS_NAME, "f6431b446c")
+image_hotel=driver.find_element(By.CLASS_NAME,"f9671d49b1")
+screenshot=image_hotel.screenshot_as_png
+image=Image.open(BytesIO(screenshot))
+output_path = "image.png"  
+image.save(output_path)
+
 header = result.pop(0)
 
 #list initialization
@@ -78,15 +85,9 @@ if no_of_properties>0:
     for hoteel2 in hotel_prices:
         top_pick_price=hoteel2
         break
-
-#top pick
-   # print(f"Our top pick is {top_pick} with a total cost of {top_pick_price}")
 else:
-    #print("No results")
     exit
-   
 
 
-    
-time.sleep(100)
+time.sleep(10)
 driver.quit()
