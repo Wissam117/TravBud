@@ -18,7 +18,7 @@ def get_user_input():
 
 def build_url(search_destination, no_of_adults, no_of_children, no_of_rooms, children_ages, start_date, end_date, max_budget, min_review_points):
     base_url = f"https://www.booking.com/searchresults.html?ss={search_destination}&ssne={search_destination}&ssne_untouched={search_destination}&group_adults={no_of_adults}&no_rooms={no_of_rooms}&group_children={no_of_children}&checkin={start_date}&checkout={end_date}&nflt=price%3DPKR-min-{max_budget}-1%3Breview_score%3D{min_review_points}0"
-    if(int(no_of_children)>0):
+    if(int(no_of_children) > 0):
         for age in children_ages:
             base_url += f"&age={age}"
     return base_url
@@ -41,7 +41,7 @@ def process_hotel_data(hotels):
         thumbnail_url = hotel.find("img", {"data-testid": "image"})['src']
         process_image(thumbnail_url)
         hotels_data.append({'name': name, 'location': location, 'price': price})
-        break
+        break  # Remove or adjust this break statement depending on how many hotels you want to process
     return hotels_data
 
 def process_image(thumbnail_url):
@@ -63,12 +63,47 @@ def save_hotels_to_csv(hotels_data):
     hotels_df = pd.DataFrame(hotels_data)
     hotels_df.to_csv('hotels.csv', header=True, index=False)
 
+def fetch_tripadvisor_data(loca, category="restaurants", radius=7):
+    url = f"https://api.content.tripadvisor.com/api/v1/location/search?key=8A8C09F8CDC8468B9AEAA1460B8F54F7&searchQuery={loca}&category={category}&radius={radius}"
+    if radius:
+        url += "&radiusUnit=km"
+    url += "&language=en"
+
+    headers = {"accept": "application/json"}
+    response = requests.get(url, headers=headers)
+    data = response.json()  # Assuming the API returns JSON data
+
+    # Extracting required data
+    extracted_data = []
+    if "data" in data:
+        for item in data["data"]:
+            location_id = item.get("location_id")
+            name = item.get("name")
+            address_string = item["address_obj"].get("address_string", "")
+            city = item["address_obj"].get("city", "")
+            extracted_data.append({
+                "location_id": location_id,
+                "name": name,
+                "address_string": address_string,
+                "city": city
+            })
+
+    # Saving extracted data to CSV
+    if extracted_data:
+        df = pd.DataFrame(extracted_data)
+        df.to_csv('tripadvisor_data.csv', index=False)
+        print("TripAdvisor data saved to tripadvisor_data.csv")
+    else:
+        print("No data found to save")
+
 def main():
     user_inputs = get_user_input()
     url = build_url(*user_inputs)
     hotels = fetch_hotel_data(url)
     hotels_data = process_hotel_data(hotels)
     save_hotels_to_csv(hotels_data)
+    fetch_tripadvisor_data(user_inputs[0])  
+   
 
 if __name__ == "__main__":
     main()
