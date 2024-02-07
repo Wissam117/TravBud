@@ -41,7 +41,7 @@ def process_hotel_data(hotels):
         thumbnail_url = hotel.find("img", {"data-testid": "image"})['src']
         process_image(thumbnail_url)
         hotels_data.append({'name': name, 'location': location, 'price': price})
-        break  # Remove or adjust this break statement depending on how many hotels you want to process
+        break 
     return hotels_data
 
 def process_image(thumbnail_url):
@@ -71,7 +71,7 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=7):
 
     headers = {"accept": "application/json"}
     response = requests.get(url, headers=headers)
-    data = response.json()  # Assuming the API returns JSON data
+    data = response.json()  
 
     # Extracting required data
     extracted_data = []
@@ -87,8 +87,8 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=7):
                 "address_string": address_string,
                 "city": city
             })
+            break
 
-    # Saving extracted data to CSV
     if extracted_data:
         df = pd.DataFrame(extracted_data)
         df.to_csv('tripadvisor_data.csv', index=False)
