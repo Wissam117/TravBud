@@ -39,16 +39,22 @@ def process_hotel_data(hotels):
         location = hotel.find('span', {'data-testid': 'address'}).text.strip()
         price = ''.join(c for c in hotel.find("span", {"data-testid": "price-and-discounted-price"}).text if c.isdigit())
         thumbnail_url = hotel.find("img", {"data-testid": "image"})['src']
-        process_image(thumbnail_url)
+        process_hotel_image(thumbnail_url)
         hotels_data.append({'name': name, 'location': location, 'price': price})
         break 
     return hotels_data
 
-def process_image(thumbnail_url):
+def process_hotel_image(thumbnail_url):
     response = requests.get(thumbnail_url)
     image = Image.open(BytesIO(response.content))
     cropped_image = crop_and_resize_image(image)
-    save_image(cropped_image, "image.png")
+    save_image(cropped_image, "Hotel.png")
+
+def process_restaurant_image(restaurant_img_link):
+    response = requests.get(restaurant_img_link)
+    image = Image.open(BytesIO(response.content))
+    save_image(image, "Restaurant.png")
+
 
 def crop_and_resize_image(image):
     width, height = image.size
@@ -63,13 +69,14 @@ def save_hotels_to_csv(hotels_data):
     hotels_df = pd.DataFrame(hotels_data)
     hotels_df.to_csv('hotels.csv', header=True, index=False)
 
-def fetch_tripadvisor_data(loca, category="restaurants", radius=7):
-    url = f"https://api.content.tripadvisor.com/api/v1/location/search?key=8A8C09F8CDC8468B9AEAA1460B8F54F7&searchQuery={loca}&category={category}&radius={radius}"
+def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
+    api_key="8A8C09F8CDC8468B9AEAA1460B8F54F7"
+    no_of_pictures=1
+    headers = {"accept": "application/json"}
+    url = f"https://api.content.tripadvisor.com/api/v1/location/search?key={api_key}&searchQuery={loca}&category={category}&radius={radius}"
     if radius:
         url += "&radiusUnit=km"
     url += "&language=en"
-
-    headers = {"accept": "application/json"}
     response = requests.get(url, headers=headers)
     data = response.json()  
 
@@ -82,16 +89,23 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=7):
             address_string = item["address_obj"].get("address_string", "")
             city = item["address_obj"].get("city", "")
             extracted_data.append({
-                "location_id": location_id,
                 "name": name,
                 "address_string": address_string,
                 "city": city
             })
+            url1 = f"https://api.content.tripadvisor.com/api/v1/location/{location_id}/photos?key={api_key}&language=en&limit={no_of_pictures}"
+            response1 = requests.get(url1, headers=headers)
+            data1 = response1.json()  
+            original_image_url = data1['data'][0]['images']['original']['url']
+            url_for_original_image = original_image_url
+            url_for_original_image_clean = ''.join(c for c in url_for_original_image if c.isalnum() or c in ':/.-_')
+            process_restaurant_image(url_for_original_image_clean)
             break
+
 
     if extracted_data:
         df = pd.DataFrame(extracted_data)
-        df.to_csv('tripadvisor_data.csv', index=False)
+        df.to_csv('restaurants.csv', index=False)
         print("TripAdvisor data saved to tripadvisor_data.csv")
     else:
         print("No data found to save")
