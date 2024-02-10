@@ -3,6 +3,11 @@ import requests
 import pandas as pd
 from PIL import Image
 from io import BytesIO
+from geopy.geocoders import Nominatim
+
+
+
+
 
 def get_user_input():
     search_destination = input("Enter search destination: ")
@@ -44,6 +49,14 @@ def process_hotel_data(hotels):
         break 
     return hotels_data
 
+def getlatlong(loca):
+    geolocator = Nominatim(user_agent="geoapiExercises")
+    location = geolocator.geocode(f"{loca}")
+    locationx = location.latitude
+    locationy = location.longitude
+    return locationx,locationy
+    
+
 def process_hotel_image(thumbnail_url):
     response = requests.get(thumbnail_url)
     image = Image.open(BytesIO(response.content))
@@ -73,7 +86,8 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
     api_key="8A8C09F8CDC8468B9AEAA1460B8F54F7"
     no_of_pictures=1
     headers = {"accept": "application/json"}
-    url = f"https://api.content.tripadvisor.com/api/v1/location/search?key={api_key}&searchQuery={loca}&category={category}&radius={radius}"
+    locationx,locationy=getlatlong(loca)
+    url = f"https://api.content.tripadvisor.com/api/v1/location/nearby_search?latLong={locationx}%2C%20{locationy}&key={api_key}&category={category}&radius={radius}"
     if radius:
         url += "&radiusUnit=km"
     url += "&language=en"
