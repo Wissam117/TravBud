@@ -5,10 +5,6 @@ from PIL import Image
 from io import BytesIO
 from geopy.geocoders import Nominatim
 
-
-
-
-
 def get_user_input():
     search_destination = input("Enter search destination: ")
     no_of_adults = input("Enter number of adults: ")
@@ -51,7 +47,7 @@ def process_hotel_data(hotels):
 
 def getlatlong(loca):
     geolocator = Nominatim(user_agent="geoapiExercises")
-    location = geolocator.geocode(f"{loca}")
+    location = geolocator.geocode(loca)
     locationx = location.latitude
     locationy = location.longitude
     return locationx,locationy
@@ -60,20 +56,14 @@ def getlatlong(loca):
 def process_hotel_image(thumbnail_url):
     response = requests.get(thumbnail_url)
     image = Image.open(BytesIO(response.content))
-    cropped_image = crop_and_resize_image(image)
-    save_image(cropped_image, "Hotel.png")
+    save_image(image, "Hotel.png")
 
 def process_restaurant_image(restaurant_img_link):
     response = requests.get(restaurant_img_link)
-    image = Image.open(BytesIO(response.content))
-    save_image(image, "Restaurant.png")
-
-
-def crop_and_resize_image(image):
-    width, height = image.size
-    crop_rectangle = (4, height / 5, 154, 3 * height / 5)
-    cropped_image = image.crop(crop_rectangle).resize((480, 360))
-    return cropped_image
+    print("I'm here")
+    ximage = Image.open(BytesIO(response.content))
+    print("I'm here")
+    save_image(ximage,"Eatery.png")
 
 def save_image(image, path):
     image.save(path)
@@ -84,7 +74,7 @@ def save_hotels_to_csv(hotels_data):
 
 def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
     api_key="8A8C09F8CDC8468B9AEAA1460B8F54F7"
-    no_of_pictures=1
+    no_of_pictures=2
     headers = {"accept": "application/json"}
     locationx,locationy=getlatlong(loca)
     url = f"https://api.content.tripadvisor.com/api/v1/location/nearby_search?latLong={locationx}%2C%20{locationy}&key={api_key}&category={category}&radius={radius}"
@@ -94,7 +84,6 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
     response = requests.get(url, headers=headers)
     data = response.json()  
 
-    # Extracting required data
     extracted_data = []
     if "data" in data:
         for item in data["data"]:
@@ -107,22 +96,26 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
                 "address_string": address_string,
                 "city": city
             })
-            url1 = f"https://api.content.tripadvisor.com/api/v1/location/{location_id}/photos?key={api_key}&language=en&limit={no_of_pictures}"
-            response1 = requests.get(url1, headers=headers)
-            data1 = response1.json()  
-            original_image_url = data1['data'][0]['images']['original']['url']
-            url_for_original_image = original_image_url
-            url_for_original_image_clean = ''.join(c for c in url_for_original_image if c.isalnum() or c in ':/.-_')
-            process_restaurant_image(url_for_original_image_clean)
             break
 
+    #Restaurant Image Saving
+    url1 = f"https://api.content.tripadvisor.com/api/v1/location/{location_id}/photos?key={api_key}&language=en&limit={no_of_pictures}"
+    response = requests.get(url1, headers=headers)
+    data = response.json()  
+    print(data)
+    if "data" in data:
+        for item in data["data"]:
+            original_image_url = data['data'][0]['images']['original']['url']
+            url_for_original_image = ''.join(c for c in url_for_original_image if c.isalnum() or c in ':/.-_')
+            print(url_for_original_image)
+            process_restaurant_image(url_for_original_image)
+            break
 
     if extracted_data:
         df = pd.DataFrame(extracted_data)
         df.to_csv('restaurants.csv', index=False)
-        print("TripAdvisor data saved to tripadvisor_data.csv")
     else:
-        print("No data found to save")
+       exit
 
 def main():
     user_inputs = get_user_input()
