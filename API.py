@@ -56,12 +56,17 @@ def getlatlong(loca):
 def process_hotel_image(thumbnail_url):
     response = requests.get(thumbnail_url)
     image = Image.open(BytesIO(response.content))
-    save_image(image, "Hotel.png")
+    save_image(crop_and_resize_image(image)), "Hotel.png")
 
 def process_restaurant_image(restaurant_img_link,img_no):
     response = requests.get(restaurant_img_link)   
     ximage = Image.open(BytesIO(response.content))
-    save_image(ximage,"Eatery"+f"{img_no}"+".png")
+    save_image(crop_and_resize_image(ximage),"Eatery"+f"{img_no}"+".png")
+
+def crop_and_resize_image(image):
+    resized_image = image.resize((300, 300))
+    return resized_image
+
 
 def save_image(image, path):
     image.save(path)
