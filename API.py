@@ -56,11 +56,13 @@ def getlatlong(loca):
 def process_hotel_image(thumbnail_url):
     response = requests.get(thumbnail_url)
     image = Image.open(BytesIO(response.content))
-    save_image(crop_and_resize_image(image)), "Hotel.png")
+    save_image(image, "Hotel.png")
+    save_image(crop_and_resize_image(image), "Hotel.png")
 
 def process_restaurant_image(restaurant_img_link,img_no):
     response = requests.get(restaurant_img_link)   
     ximage = Image.open(BytesIO(response.content))
+    save_image(ximage,"Eatery"+f"{img_no}"+".png")
     save_image(crop_and_resize_image(ximage),"Eatery"+f"{img_no}"+".png")
 
 def crop_and_resize_image(image):
@@ -81,8 +83,6 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
     headers = {"accept": "application/json"}
     headers1 = {"accept": "application/json"}
     locationx,locationy=getlatlong(loca)
-
-
     location_id=""
     extracted_data = []
     x=1
@@ -110,10 +110,10 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
                 url_for_original_image = ''.join(c for c in original_image_url if c.isalnum() or c in ':/.-_')
                 process_restaurant_image(url_for_original_image,x)
                 x+=1
-                if x==3:
+                if x>1:
                     break
 
-        if x==3:
+        if x>1:
             break
 
     extracted_data.append({
