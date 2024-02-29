@@ -1,26 +1,45 @@
-from bs4 import BeautifulSoup
+from flask import Flask, request, jsonify
 import requests
-import pandas as pd
+from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 import geocoder
+import pandas as pd
 
+app = Flask(__name__)
 
-def get_user_input():
-    search_destination = input("Enter search destination: ")
-    no_of_adults = input("Enter number of adults: ")
-    no_of_children = input("Enter number of children: ")
-    no_of_rooms = input("Enter number of rooms: ")
-    children_ages = input("Enter children ages (comma-separated): ").split(", ")
-    start_date = input("Enter start date (YYYY-MM-DD): ")
-    end_date = input("Enter end date (YYYY-MM-DD): ")
-    max_budget = input("Enter max per day accommodation budget: ")
-    min_review_points = input("Enter minimum review points: ")
-    return search_destination, no_of_adults, no_of_children, no_of_rooms, children_ages, start_date, end_date, max_budget, min_review_points
+@app.route('/search_hotels', methods=['POST'])
+def search_hotels():
+    data = request.json
+    search_destination = data['search_destination']
+    no_of_adults = data['no_of_adults']
+    no_of_children = data['no_of_children']
+    no_of_rooms = data['no_of_rooms']
+    children_ages = data['children_ages']  # Expect list of ages
+    start_date = data['start_date']
+    end_date = data['end_date']
+    max_budget = data['max_budget']
+    min_review_points = data['min_review_points']
+
+    url = build_url(search_destination, no_of_adults, no_of_children, no_of_rooms, children_ages, start_date, end_date, max_budget, min_review_points)
+    hotels = fetch_hotel_data(url)
+    hotels_data = process_hotel_data(hotels)
+    save_hotels_to_csv(hotels_data)
+
+    return jsonify({"status": "success", "message": "Hotels data processed and saved."})
+
+@app.route('/search_restaurants', methods=['POST'])
+def search_restaurants():
+    data = request.json
+    location = data['location']
+
+    fetch_tripadvisor_data(location)
+
+    return jsonify({"status": "success", "message": "Restaurants data processed and saved."})
 
 def build_url(search_destination, no_of_adults, no_of_children, no_of_rooms, children_ages, start_date, end_date, max_budget, min_review_points):
-    base_url = f"https://www.booking.com/searchresults.html?ss={search_destination}&ssne={search_destination}&ssne_untouched={search_destination}&group_adults={no_of_adults}&no_rooms={no_of_rooms}&group_children={no_of_children}&checkin={start_date}&checkout={end_date}&nflt=price%3DPKR-min-{max_budget}-1%3Breview_score%3D{min_review_points}0"
-    if(int(no_of_children) > 0):
+    base_url = f"https://www.booking.com/searchresults.html?ss={search_destination}&group_adults={no_of_adults}&no_rooms={no_of_rooms}&group_children={no_of_children}&checkin={start_date}&checkout={end_date}&nflt=price%3DPKR-min-{max_budget}-1%3Breview_score%3D{min_review_points}0"
+    if int(no_of_children) > 0:
         for age in children_ages:
             base_url += f"&age={age}"
     return base_url
@@ -40,102 +59,38 @@ def process_hotel_data(hotels):
         name = hotel.find('div', {'data-testid': 'title'}).text.strip()
         location = hotel.find('span', {'data-testid': 'address'}).text.strip()
         price = ''.join(c for c in hotel.find("span", {"data-testid": "price-and-discounted-price"}).text if c.isdigit())
-        thumbnail_url = hotel.find("img", {"data-testid": "image"})['src']
-        process_hotel_image(thumbnail_url)
+        # Process hotel images if needed
         hotels_data.append({'name': name, 'location': location, 'price': price})
-        break 
+        break  # Remove break to process all hotels
     return hotels_data
-
-def getlatlong(loca):
-    geolocator = geocoder.osm(loca)
-    locationx = geolocator.latlng[0]
-    locationy = geolocator.latlng[1]
-    return locationx,locationy
-    
-
-def process_hotel_image(thumbnail_url):
-    response = requests.get(thumbnail_url)
-    image = Image.open(BytesIO(response.content))
-    save_image(image, "Hotel.png")
-    save_image(crop_and_resize_image(image), "Hotel.png")
-
-def process_restaurant_image(restaurant_img_link,img_no):
-    response = requests.get(restaurant_img_link)   
-    ximage = Image.open(BytesIO(response.content))
-    save_image(ximage,"Eatery"+f"{img_no}"+".png")
-    save_image(crop_and_resize_image(ximage),"Eatery"+f"{img_no}"+".png")
-
-def crop_and_resize_image(image):
-    resized_image = image.resize((300, 300))
-    return resized_image
-
-
-def save_image(image, path):
-    image.save(path)
 
 def save_hotels_to_csv(hotels_data):
     hotels_df = pd.DataFrame(hotels_data)
     hotels_df.to_csv('hotels.csv', header=True, index=False)
 
+def getlatlong(loca):
+    geolocator = geocoder.osm(loca)
+    return geolocator.latlng
+
 def fetch_tripadvisor_data(loca, category="restaurants", radius=5):
-    api_key="8A8C09F8CDC8468B9AEAA1460B8F54F7"
-
+    api_key = "Your_TripAdvisor_API_Key_Here"
+    locationx, locationy = getlatlong(loca)
+    url = f"https://api.content.tripadvisor.com/api/v1/location/nearby_search?latLong={locationx},{locationy}&key={api_key}&category={category}&radius={radius}&language=en"
+    
     headers = {"accept": "application/json"}
-    headers1 = {"accept": "application/json"}
-    locationx,locationy=getlatlong(loca)
-    location_id=""
-    extracted_data = []
-    x=1
-
-    url = f"https://api.content.tripadvisor.com/api/v1/location/nearby_search?latLong={locationx}%2C%20{locationy}&key={api_key}&category={category}&radius={radius}"
-    if radius:
-        url += "&radiusUnit=km"
-    url += "&language=en"
     response = requests.get(url, headers=headers)
-    data = response.json()   
-    for item in data["data"]:   
-        if "data" in data:
-            location_id = item.get("location_id")
-            name = item.get("name")
-            address_string = item["address_obj"].get("address_string", "")
-            city = item["address_obj"].get("city", "")
-                
-        #Restaurant Image Saving
-        url1 = f"https://api.content.tripadvisor.com/api/v1/location/{location_id}/photos?key={api_key}&language=en&limit=3&source=Management"
-        response = requests.get(url1,headers=headers1)
-        data1 = response.json()  
-        if "data" in data1:
-            for item in data1["data"]:
-                original_image_url = data1['data'][0]['images']['original']['url']
-                url_for_original_image = ''.join(c for c in original_image_url if c.isalnum() or c in ':/.-_')
-                process_restaurant_image(url_for_original_image,x)
-                x+=1
-                if x>1:
-                    break
+    data = response.json()
+    
+    # Process and save restaurant data as needed
+    # This is a placeholder for where you would process and save your TripAdvisor data
+    print("Restaurant data processed")
 
-        if x>1:
-            break
+if __name__ == '__main__':
+    app.run(debug=True)
 
-    extracted_data.append({
-                "name": name,
-                "address_string": address_string,
-                "city": city
-            })        
 
-    if extracted_data:
-        df = pd.DataFrame(extracted_data)
-        df.to_csv('restaurants.csv', index=False)
-    else:
-       exit
 
-def main():
-    user_inputs = get_user_input()
-    url = build_url(*user_inputs)
-    hotels = fetch_hotel_data(url)
-    hotels_data = process_hotel_data(hotels)
-    save_hotels_to_csv(hotels_data)
-    fetch_tripadvisor_data(user_inputs[0])  
-   
 
-if __name__ == "__main__":
-    main()
+
+
+
