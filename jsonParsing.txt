@@ -1,0 +1,68 @@
+
+  '''
+    if hotels:
+        hotels_data = process_hotel_data(hotels)
+        success = save_hotels_to_csv(hotels_data)
+        
+        message = "Data saved" if success else "Data not saved"
+        
+        return jsonify({"message": message})
+    else:
+        return jsonify({"message": "No hotels found with the provided search criteria."})
+    '''
+    
+def process_hotel_image(thumbnail_url):
+    response = requests.get(thumbnail_url)
+    image = Image.open(BytesIO(response.content))
+    save_image(image, "Hotel.png")
+    save_image(crop_and_resize_image(image), "Hotel.png")
+
+    
+def process_restaurant_image(restaurant_img_link,img_no):
+    response = requests.get(restaurant_img_link)   
+    ximage = Image.open(BytesIO(response.content))
+    save_image(ximage,"Eatery"+f"{img_no}"+".png")
+    save_image(crop_and_resize_image(ximage),"Eatery"+f"{img_no}"+".png")
+
+def crop_and_resize_image(image):
+    resized_image = image.resize((300, 300))
+    return resized_image
+
+
+def save_image(image, path):
+    image.save(path)
+
+def save_hotels_to_csv(hotels_data):
+    try:
+        hotels_df = pd.DataFrame(hotels_data)
+        hotels_df.to_csv('hotels.csv', header=True, index=False)
+        return True  
+    except Exception as e:
+        print(f"Error saving hotels data to CSV: {e}")
+        return False  
+
+
+
+        "fetch tripadvisor data func image link extraction"
+        if "data" in data1:
+            for item in data1["data"]:
+                original_image_url = data1['data'][0]['images']['original']['url']
+                url_for_original_image = ''.join(c for c in original_image_url if c.isalnum() or c in ':/.-_')
+                process_restaurant_image(url_for_original_image,x)
+                x+=1
+                if x>1:
+                    break
+
+        if x>1:
+            break
+
+             df.to_csv('restaurants.csv', index=False)
+
+
+
+:::tripadvisor api 
+if "data" in data:
+            location_id = item.get("location_id")
+            name = item.get("name")
+            address_string = item["address_obj"].get("address_string", "")
+            city = item["address_obj"].get("city", "")
