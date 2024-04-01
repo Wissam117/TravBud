@@ -66,3 +66,13 @@ if "data" in data:
             name = item.get("name")
             address_string = item["address_obj"].get("address_string", "")
             city = item["address_obj"].get("city", "")
+
+
+
+:::
+flask 
+
+cd C:\Users\Admin\eclipse-workspace\TravBud\API.py
+set FLASK_APP=API
+flask run
+

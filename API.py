@@ -2,9 +2,9 @@ from flask import Flask, jsonify, request
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from PIL import Image
-from io import BytesIO
 import geocoder
+
+
 
 app = Flask(__name__)
 
