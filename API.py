@@ -31,9 +31,8 @@ def fetch_hotels():
 @app.route('/fetch-restaurants', methods=['GET'])
 def fetch_restaurants():
     loca = request.args.get('location')
-    fetch_tripadvisor_data(loca)  
-    df = pd.read_csv('restaurants.csv')
-    return df.to_json(orient='records')
+    df=fetch_tripadvisor_data(loca)  
+    return jsonify(df)
 
 
 def build_url(search_destination, no_of_adults, no_of_children, no_of_rooms, children_ages, start_date, end_date, max_budget, min_review_points):
@@ -72,7 +71,6 @@ def getlatlong(loca):
 
 def fetch_tripadvisor_data(loca, category="restaurants", radius=5, api_key="8A8C09F8CDC8468B9AEAA1460B8F54F7"): #added api_key parameter
     headers = {"accept": "application/json"}
-    headers1 = {"accept": "application/json"}
     locationx,locationy=getlatlong(loca)
     location_id=""
     extracted_data = []
@@ -81,16 +79,16 @@ def fetch_tripadvisor_data(loca, category="restaurants", radius=5, api_key="8A8C
     if radius:
         url += "&radiusUnit=km"
     url += "&language=en"
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers)
     data = response.json()   
     for item in data["data"]:
         if "data" in data:
             location_id = item.get("location_id")
             url1 = f"https://api.content.tripadvisor.com/api/v1/location/{location_id}/photos?key={api_key}&language=en&limit=3&source=Management"
-            response = requests.get(url1,headers=headers1)
+            response = requests.get(url1,headers)
             data1 = response.json()
         break
-
+    return data1
         
 
 
