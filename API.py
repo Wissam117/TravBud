@@ -69,7 +69,7 @@ def getlatlong(loca):
     return locationx,locationy
     
 
-def fetch_tripadvisor_data(loca, category="restaurants", radius=5, api_key="8A8C09F8CDC8468B9AEAA1460B8F54F7"): #added api_key parameter
+def fetch_tripadvisor_data(loca, category="restaurants", radius=5, api_key=""): #added api_key parameter
     headers = {"accept": "application/json"}
     locationx,locationy=getlatlong(loca)
     location_id=""
